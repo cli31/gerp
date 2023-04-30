@@ -17,7 +17,8 @@ class hashTable {
 public:
     hashTable();
     ~hashTable();
-    void push(const Word w);
+    void push(const std::string wordString,
+              const std::pair<File*, int> vertex);
     std::vector<Word> get(const std::string wordString, 
                           const bool if_sensitive);
 private:
@@ -28,6 +29,7 @@ private:
 
     std::string insensitize(std::string _wordString);
     void expand();
+    void populate(std::vector<Word> bucket);
 };
 
 #endif

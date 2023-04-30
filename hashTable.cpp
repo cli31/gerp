@@ -34,8 +34,8 @@ hashTable::hashTable() : capacity(1024), keyNum(0) {
  * 
  */
 hashTable::~hashTable() {
-    delete word_map;
-    delete map_reference;
+    delete [] word_map;
+    delete [] map_reference;
 }
 
 /*
@@ -47,21 +47,29 @@ hashTable::~hashTable() {
  *              if there is a bucket for this word, if none, search forward to
  *              find a empty bucket, update hash info in map_reference
  */
-void hashTable::push(const Word w) {
+void hashTable::push(const std::string wordString, 
+                     const std::pair<File*, int> vertex) {
     // step1: check if need to expand the table
-    if (capacity - keyNum < 2)
+    if ((double)(keyNum) / capacity > 0.7) {
+        std::cout << "hash factor reaches 0.7 at " << keyNum << " expand now\n";
         expand();
+    }
     // step2: insensitive the wordString
-    std::string key = insensitize(w.wordString);
+    std::string key = insensitize(wordString);
     // step3: get the temporary hash_value
     size_t hash_value = std::hash<std::string>{}(key) % capacity;
     // step4: push into correct bucket
     // case1: check if bucket is empty -> if it is, just fill it in
     if (word_map[hash_value].empty()) {
-        word_map[hash_value].push_back(w);
+        word_map[hash_value].push_back(Word(wordString, vertex));
         // update reference
         map_reference[hash_value].push_back(std::make_pair(key, hash_value));
         keyNum++;
+        std::cout << wordString << "\t" 
+                  << hash_value << "\t" 
+                  << "no" << "\t" 
+                  << vertex.first->fileNameWithPath << ":" 
+                  << vertex.second << std::endl;
     }
     else { // case2: if not empty
         // check if it appeared before (iterate through the reference)
@@ -69,31 +77,43 @@ void hashTable::push(const Word w) {
             if (key == itr.first) {
                 // in that bucket, iterate through to examine if
                 // case I: sensitive string appeared before
-                for (Word &i : word_map[itr.second]) {
-                    if (w.wordString == i.wordString) {
-                        i.add(w.vertex.at(0));
+                hash_value = itr.second; // update hash_value
+                std::cout << wordString << "\t" 
+                          << hash_value << "\t" 
+                          << "no" << "\t" 
+                          << vertex.first->fileNameWithPath << ":"
+                          << vertex.second << std::endl;
+                for (Word &i : word_map[hash_value]) {
+                    if (wordString == i.wordString) {
+                        i.add(vertex);
                         return; // finished add
                     }
                 }
-                // case II: did not find sensitive string -> insensitive case
-                word_map[itr.second].push_back(w);
+                // case II: did not find the exact string -> insensitive case
+                word_map[hash_value].push_back(Word(wordString, vertex));
                 return; // finish add
                 // no need to increment keyNum since no new bucket occupied
             }
         }
         // if return before never executed, then this key was never recorded
-        hash_value++; // skip this bucket
+        size_t new_hash_value = hash_value + 1; // + 1 to skip this bucket
         // march forward until find a new empty bucket
-        while (not word_map[hash_value].empty()) {
-            hash_value++;
+        while (not word_map[new_hash_value].empty()) {
+            new_hash_value++;
         }
         // repeat case1
         // fill in the empty bucket, update reference, and increment keyNum
-        word_map[hash_value].push_back(w);
-        map_reference[hash_value].push_back(std::make_pair(key, hash_value));
+        word_map[new_hash_value].push_back(Word(wordString, vertex));
+        map_reference[hash_value].push_back(std::make_pair(key,new_hash_value));
         keyNum++;
+        std::cout << wordString << "\t" 
+                  << hash_value << "\t" 
+                  << "yes" << "\t" 
+                  << vertex.first->fileNameWithPath << ":"
+                  << vertex.second << std::endl;
     }
 }
+
 
 /*
  * get
@@ -112,7 +132,7 @@ std::vector<Word> hashTable::get(const std::string wordString,
     std::string key = insensitize(wordString);
     size_t hash_v = std::hash<std::string>{}(key) % capacity;
     // step2: search in map_reference
-    for (const auto &itr :  map_reference[hash_v]) {
+    for (const std::pair<std::string, size_t> &itr :  map_reference[hash_v]) {
         // if found
         if (key == itr.first) {
             // update hash_value
@@ -121,7 +141,7 @@ std::vector<Word> hashTable::get(const std::string wordString,
             // if case sensitive -> need to find the exact same elem
             if (if_sensitive) {
                 // the vector will only have one elems
-                for (const auto &i : word_map[hash_v]) {
+                for (const Word &i : word_map[hash_v]) {
                     if (i.wordString == wordString) {
                         return std::vector<Word>{i};
                     }
@@ -167,26 +187,39 @@ std::string hashTable::insensitize(std::string _wordString) {
  */
 void hashTable::expand() {
     // update capacity (also prevent overflow of size_t)
-    capacity = (capacity > (2 ^ 32 - 1) / 2) ? (2 ^ 32 - 1) : capacity * 2;
+    size_t old_capacity = capacity;
+    capacity = (capacity > (1LL << 31)) ? (1LL << (32 - 1)) : (capacity * 2);
     // assign old data
     std::vector<Word> *old_word_map = word_map;
     // when iterate through every data, the map_reference is in no use
     // delete to avoid overlap
-    delete map_reference;
+    delete [] map_reference;
     
     // create new map and references in current capacity
     word_map = new std::vector<Word>[capacity];
     map_reference = new std::vector<std::pair<std::string, size_t>>[capacity];
     
     // iterate through every dimension and implement into new map and reference
-    for (size_t i = 0; i < capacity / 2; i++) {
-        for (const Word &j : old_word_map[i]) {
-            for (const std::pair<File*, int> &k : j.vertex) {
-                Word temp(j.wordString , k);
-                push(temp);
-            }
-        }
+    for (size_t i = 0; i < old_capacity; i++) {
+        populate(old_word_map[i]);
     }
 
-    delete old_word_map;
+    delete [] old_word_map;
+}
+
+void hashTable::populate(std::vector<Word> bucket) {
+    std::string key = insensitize(bucket.at(0).wordString);
+    size_t hash_value = std::hash<std::string>{}(key) % capacity;
+    // same as push
+    if (map_reference[hash_value].empty()) {
+        word_map[hash_value] = bucket;
+    }
+    else {
+        size_t new_hash_value = hash_value + 1;
+        while (not word_map[new_hash_value].empty()) {
+            new_hash_value++;
+        }
+        map_reference[hash_value].push_back(std::make_pair(key,new_hash_value));
+        word_map[new_hash_value] = bucket;
+    }
 }
