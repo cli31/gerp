@@ -108,7 +108,7 @@ void hashTable::push(const std::string wordString,
         keyNum++;
         std::cout << wordString << "\t" 
                   << hash_value << "\t" 
-                  << "yes" << "\t" 
+                  << "yes: new hash " << new_hash_value << "\t" 
                   << vertex.first->fileNameWithPath << ":"
                   << vertex.second << std::endl;
     }
@@ -189,6 +189,7 @@ void hashTable::expand() {
     // update capacity (also prevent overflow of size_t)
     size_t old_capacity = capacity;
     capacity = (capacity > (1LL << 31)) ? (1LL << (32 - 1)) : (capacity * 2);
+    std::cout << "new capacity: " << capacity << std::endl;
     // assign old data
     std::vector<Word> *old_word_map = word_map;
     // when iterate through every data, the map_reference is in no use
@@ -201,7 +202,8 @@ void hashTable::expand() {
     
     // iterate through every dimension and implement into new map and reference
     for (size_t i = 0; i < old_capacity; i++) {
-        populate(old_word_map[i]);
+        if (not old_word_map[i].empty())
+            populate(old_word_map[i]);
     }
 
     delete [] old_word_map;
