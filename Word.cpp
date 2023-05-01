@@ -1,5 +1,7 @@
 #include "Word.h"
 
+Word::Word() {}
+
 Word::Word(std::string _wordString, std::pair<File*, int> _vertex) :
 wordString(_wordString), vertex(std::vector<std::pair<File*, int>>{_vertex}) {}
 

@@ -17,6 +17,8 @@ struct Word
     std::string wordString;
     std::vector<std::pair<File*, int>> vertex;
 
+    Word();
+
     Word(std::string _wordString, std::pair<File*, int> _vertex);
 
     void add(std::pair<File*, int> _vertex);

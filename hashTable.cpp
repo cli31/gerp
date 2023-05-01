@@ -89,8 +89,8 @@ void hashTable::push(const std::string wordString,
         size_t new_hash_value = (hash_value + 1) % capacity; // skip this bucket
         // march forward until find a new empty bucket
         while (not word_map[new_hash_value].empty()) {
-            new_hash_value %= capacity;
             new_hash_value++;
+            new_hash_value %= capacity;  // wrap up when beyond the range
         }
         // repeat case1
         // fill in the empty bucket, update reference, and increment keyNum
@@ -112,7 +112,7 @@ void hashTable::push(const std::string wordString,
  *         if did not find, return null
  * purpose: to find a word in the hashTable
  */
-std::vector<Word> hashTable::get(const std::string &wordString, 
+std::vector<Word> hashTable::get(const std::string &wordString,
                                  const bool &if_sensitive) {
     // step1: transform the wordString to key so that can find the right bucket
     std::string key = insensitize(wordString);
@@ -199,13 +199,15 @@ void hashTable::populate(std::vector<Word> bucket) {
     std::string key = insensitize(bucket.at(0).wordString);
     size_t hash_value = std::hash<std::string>{}(key) % capacity;
     // same as push
-    if (map_reference[hash_value].empty()) {
+    if (word_map[hash_value].empty()) {
         word_map[hash_value] = bucket;
+        map_reference[hash_value].push_back(std::make_pair(key, hash_value));
     }
     else {
-        size_t new_hash_value = hash_value + 1;
+        size_t new_hash_value = (hash_value + 1) % capacity;
         while (not word_map[new_hash_value].empty()) {
             new_hash_value++;
+            new_hash_value %= capacity;
         }
         map_reference[hash_value].push_back(std::make_pair(key,new_hash_value));
         word_map[new_hash_value] = bucket;
