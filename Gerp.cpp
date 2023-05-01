@@ -134,11 +134,23 @@ void Gerp::print(const std::string &query, const bool &if_sensitive) {
     else {
         for (const Word &i : getWord) {
             for (const std::pair<File*, int> &j : i.vertex) {
-                outFile << j.first->fileNameWithPath << ":"
-                        << (j.second + 1) << ": "
-                        << j.first->lineString.at(j.second)
-                        << std::endl;
+                if (j.first->Line.at(j.second).second == false) {
+                    outFile << j.first->fileNameWithPath << ":"
+                            << (j.second + 1) << ": "
+                            << j.first->Line.at(j.second).first
+                            << std::endl;
+                    j.first->Line.at(j.second).second = true;
+                }
             }
         }
+        resetFile();
+    }
+}
+
+void Gerp::resetFile() { // reset every Line as unvisited
+    for (File* itr : fileData) {
+        for (std::pair<std::string, bool> &j : itr->Line) {
+            j.second = false;
+        } 
     }
 }

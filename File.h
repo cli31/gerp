@@ -19,7 +19,7 @@
 struct File
 {
     std::string fileNameWithPath;
-    std::vector<std::string> lineString; // save all line string under the file
+    std::vector<std::pair<std::string, bool>> Line;
 
     File(std::string _fileNameWithPath);
 

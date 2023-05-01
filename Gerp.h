@@ -35,6 +35,7 @@ private:
     void readFile(std::string filename);
     std::string stringProcess(std::string input);
     void print(const std::string &query, const bool &if_sensitive);
+    void resetFile();
 };
 
 #endif
