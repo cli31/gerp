@@ -65,24 +65,14 @@ void hashTable::push(const std::string wordString,
         // update reference
         map_reference[hash_value].push_back(std::make_pair(key, hash_value));
         keyNum++;
-        std::cout << wordString << "\t" 
-                  << hash_value << "\t" 
-                  << "no" << "\t" 
-                  << vertex.first->fileNameWithPath << ":" 
-                  << vertex.second << std::endl;
     }
     else { // case2: if not empty
         // check if it appeared before (iterate through the reference)
-        for (const auto &itr : map_reference[hash_value]) {
+        for(const std::pair<std::string, size_t>&itr:map_reference[hash_value]){
             if (key == itr.first) {
                 // in that bucket, iterate through to examine if
                 // case I: sensitive string appeared before
                 hash_value = itr.second; // update hash_value
-                std::cout << wordString << "\t" 
-                          << hash_value << "\t" 
-                          << "no" << "\t" 
-                          << vertex.first->fileNameWithPath << ":"
-                          << vertex.second << std::endl;
                 for (Word &i : word_map[hash_value]) {
                     if (wordString == i.wordString) {
                         i.add(vertex);
@@ -96,9 +86,10 @@ void hashTable::push(const std::string wordString,
             }
         }
         // if return before never executed, then this key was never recorded
-        size_t new_hash_value = hash_value + 1; // + 1 to skip this bucket
+        size_t new_hash_value = (hash_value + 1) % capacity; // skip this bucket
         // march forward until find a new empty bucket
         while (not word_map[new_hash_value].empty()) {
+            new_hash_value %= capacity;
             new_hash_value++;
         }
         // repeat case1
@@ -106,11 +97,6 @@ void hashTable::push(const std::string wordString,
         word_map[new_hash_value].push_back(Word(wordString, vertex));
         map_reference[hash_value].push_back(std::make_pair(key,new_hash_value));
         keyNum++;
-        std::cout << wordString << "\t" 
-                  << hash_value << "\t" 
-                  << "yes: new hash " << new_hash_value << "\t" 
-                  << vertex.first->fileNameWithPath << ":"
-                  << vertex.second << std::endl;
     }
 }
 
@@ -126,8 +112,8 @@ void hashTable::push(const std::string wordString,
  *         if did not find, return null
  * purpose: to find a word in the hashTable
  */
-std::vector<Word> hashTable::get(const std::string wordString, 
-                                 const bool if_sensitive) {
+std::vector<Word> hashTable::get(const std::string &wordString, 
+                                 const bool &if_sensitive) {
     // step1: transform the wordString to key so that can find the right bucket
     std::string key = insensitize(wordString);
     size_t hash_v = std::hash<std::string>{}(key) % capacity;

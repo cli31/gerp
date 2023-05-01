@@ -87,7 +87,7 @@ void Gerp::run() {
         }
         else if (query == "@i" or query == "@insensitive") {
             std::cin >> query;
-            print(stringProcess(query), true);
+            print(stringProcess(query), false);
         }
         else if (query == "@f") {
             std::cin >> query;
@@ -95,7 +95,7 @@ void Gerp::run() {
             outFile.open(query);
         }
         else { // AnyString case
-            print(stringProcess(query), false);
+            print(stringProcess(query), true);
         }
         std::cout << "Query? ";
     }
@@ -125,11 +125,11 @@ std::string Gerp::stringProcess(std::string input) {
     return input.substr(first, last - first + 1);
 }
 
-void Gerp::print(std::string query, bool if_sensitive) {
-    std::vector<Word> getWord = map.get(query, true);
+void Gerp::print(const std::string &query, const bool &if_sensitive) {
+    std::vector<Word> getWord = map.get(query, if_sensitive);
     if (getWord.empty()) {
         outFile << query << " Not Found." 
-                << ((if_sensitive) ? "\n" : " Try with @insensitive or @i.\n");
+                << ((if_sensitive) ? " Try with @insensitive or @i.\n" : "\n" );
     }
     else {
         for (const Word &i : getWord) {

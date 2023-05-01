@@ -19,8 +19,8 @@ public:
     ~hashTable();
     void push(const std::string wordString,
               const std::pair<File*, int> vertex);
-    std::vector<Word> get(const std::string wordString, 
-                          const bool if_sensitive);
+    std::vector<Word> get(const std::string &wordString, 
+                          const bool &if_sensitive);
 private:
     size_t capacity;
     size_t keyNum;

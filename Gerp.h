@@ -34,7 +34,7 @@ private:
     void treeTraversal(DirNode *curr, std::string path);
     void readFile(std::string filename);
     std::string stringProcess(std::string input);
-    void print(std::string query, bool if_sensitive);
+    void print(const std::string &query, const bool &if_sensitive);
 };
 
 #endif
